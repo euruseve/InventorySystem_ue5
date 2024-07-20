@@ -11,6 +11,9 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 
+#include "Objects/Money.h"
+#include <Structs/MoneyType.h>
+
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 //////////////////////////////////////////////////////////////////////////
@@ -20,7 +23,8 @@ AInventoryCharacter::AInventoryCharacter()
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-		
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnComponentBeginOverlap);
+
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
 	bUseControllerRotationYaw = false;
@@ -52,6 +56,8 @@ AInventoryCharacter::AInventoryCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+
+	MoneyAmount = 0;
 }
 
 void AInventoryCharacter::BeginPlay()
@@ -126,5 +132,34 @@ void AInventoryCharacter::Look(const FInputActionValue& Value)
 		// add yaw and pitch input to controller
 		AddControllerYawInput(LookAxisVector.X);
 		AddControllerPitchInput(LookAxisVector.Y);
+	}
+}
+
+//
+void AInventoryCharacter::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+	const FHitResult& SweepResult) 
+{
+	if (OtherActor && OtherActor->IsA(AMoney::StaticClass()))
+	{
+		auto Money = Cast<AMoney>(OtherActor);
+
+		if (Money)
+		{
+			auto MoneyAmountRaw = Money->GetDataTable();
+			if (MoneyAmountRaw.DataTable)
+			{
+				auto MoneyRow = MoneyAmountRaw.DataTable->FindRow<FMoneyType>(MoneyAmountRaw.RowName, "");
+
+				if (MoneyRow)
+				{
+					MoneyAmount += MoneyRow->Amount;
+					UE_LOG(LogTemplateCharacter, Warning, TEXT("Amount: %d"), MoneyAmount);
+				}
+				
+			}
+		}
+
+		OtherActor->Destroy();
 	}
 }
