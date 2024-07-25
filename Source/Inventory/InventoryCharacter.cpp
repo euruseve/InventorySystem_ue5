@@ -10,9 +10,12 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "Blueprint/UserWidget.h"
 
 #include "Objects/Money.h"
 #include <Structs/MoneyType.h>
+#include <Kismet/GameplayStatics.h>
+
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -58,12 +61,21 @@ AInventoryCharacter::AInventoryCharacter()
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 
 	MoneyAmount = 0;
+
+	// Set Inventory Widget Class to null initially
+	InventoryWidgetClass = nullptr;
+	InventoryWidget = nullptr;
 }
 
 void AInventoryCharacter::BeginPlay()
 {
 	// Call the base class  
 	Super::BeginPlay();
+
+	if (InventoryWidgetClass)
+	{
+		InventoryWidget = CreateWidget<UUserWidget>(GetWorld(), InventoryWidgetClass);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -92,6 +104,9 @@ void AInventoryCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AInventoryCharacter::Look);
+
+		// Inventory
+		EnhancedInputComponent->BindAction(InventoryAction, ETriggerEvent::Started, this, &AInventoryCharacter::InventoryEvent);
 	}
 	else
 	{
@@ -135,6 +150,23 @@ void AInventoryCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
+
+void AInventoryCharacter::InventoryEvent(const FInputActionValue& Value)
+{
+	if (InventoryWidget)
+	{
+		auto PlayerController = Cast<APlayerController>(GetController());
+		if (!PlayerController) 
+			return;
+
+		InventoryWidget->AddToViewport();
+		PlayerController->SetShowMouseCursor(true);
+
+		const TSharedPtr<SWidget> SInventoryWidget = InventoryWidget->TakeWidget();
+		PlayerController->SetInputMode(FInputModeUIOnly().SetWidgetToFocus(SInventoryWidget));
+	}
+}
+
 //
 void AInventoryCharacter::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
@@ -154,7 +186,7 @@ void AInventoryCharacter::OnComponentBeginOverlap(UPrimitiveComponent* Overlappe
 				if (MoneyRow)
 				{
 					MoneyAmount += MoneyRow->Amount;
-					UE_LOG(LogTemplateCharacter, Warning, TEXT("Amount: %d"), MoneyAmount);
+					// UE_LOG(LogTemplateCharacter, Warning, TEXT("Amount: %d"), MoneyAmount);
 				}
 				
 			}
@@ -163,3 +195,4 @@ void AInventoryCharacter::OnComponentBeginOverlap(UPrimitiveComponent* Overlappe
 		OtherActor->Destroy();
 	}
 }
+

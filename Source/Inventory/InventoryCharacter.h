@@ -42,7 +42,9 @@ class AInventoryCharacter : public ACharacter
 
 	/** Look Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* LookAction;
+	UInputAction* LookAction;	
+	
+
 
 public:
 	AInventoryCharacter();
@@ -73,6 +75,11 @@ public:
 
 	/* MODIFIED */
 
+private:
+	/** Inventory Input Action */
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* InventoryAction;
+
 public:
 	UFUNCTION()
 	void OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -82,5 +89,14 @@ public:
 protected:
 	UPROPERTY()
 	int32 MoneyAmount;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
+	TSubclassOf<UUserWidget> InventoryWidgetClass;
+
+	UPROPERTY()
+	TObjectPtr<UUserWidget> InventoryWidget;
+
+	/** Called for open|closing inventory */
+	void InventoryEvent(const FInputActionValue& Value);
 };
 
