@@ -25,6 +25,7 @@ DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
 AInventoryCharacter::AInventoryCharacter()
 {
+	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
@@ -61,7 +62,7 @@ AInventoryCharacter::AInventoryCharacter()
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 	
 
-	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
+
 }
 
 void AInventoryCharacter::BeginPlay()

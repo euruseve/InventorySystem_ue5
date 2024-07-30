@@ -20,7 +20,10 @@ UInventoryComponent::UInventoryComponent()
 	MoneyAmount = 0;
 
 	InventoryWidgetClass = nullptr;
-	InventoryWidget = nullptr;
+	InventoryWidget = nullptr;	
+	
+	HealthbarWidgetClass = nullptr;
+	HealthbarWidget = nullptr;
 }
 
 
@@ -28,10 +31,19 @@ void UInventoryComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
+	Health = MaxHealth;
+
 	if (InventoryWidgetClass)
 	{
 		InventoryWidget = CreateWidget<UUserWidget>(GetWorld(), InventoryWidgetClass);
 	}
+
+	if (HealthbarWidgetClass)
+	{
+		HealthbarWidget = CreateWidget<UUserWidget>(GetWorld(), HealthbarWidgetClass);
+		//HealthbarWidget->AddToViewport();
+	}
+
 
 	PlayerCharacter = Cast<AInventoryCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 	UCapsuleComponent* PlayerComponent = PlayerCharacter->GetCapsuleComponent();
@@ -41,6 +53,16 @@ void UInventoryComponent::BeginPlay()
 		PlayerComponent->OnComponentBeginOverlap.AddDynamic(this, &UInventoryComponent::OnOverlapBegin);
 	}
 
+}
+
+void UInventoryComponent::DecreaseHeath(float Value)
+{
+	Health -= Value;
+}
+
+void UInventoryComponent::IncreaseHeath(float Value)
+{
+	Health += Value;
 }
 
 void UInventoryComponent::InventoryEvent(const FInputActionValue& Value)

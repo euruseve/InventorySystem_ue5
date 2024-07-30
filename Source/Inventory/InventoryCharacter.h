@@ -73,8 +73,8 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
-	UFUNCTION()
-	UInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
+	UFUNCTION(BlueprintCallable)
+	UInventoryComponent* GetInventory() const { return InventoryComponent; }
 	/* MODIFIED */
 
 private:
