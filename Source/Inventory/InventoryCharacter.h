@@ -13,6 +13,8 @@ class UInputMappingContext;
 class UInputAction;
 struct FInputActionValue;
 
+class UInventoryComponent;
+
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 UCLASS(config=Game)
@@ -45,7 +47,6 @@ class AInventoryCharacter : public ACharacter
 	UInputAction* LookAction;	
 	
 
-
 public:
 	AInventoryCharacter();
 	
@@ -72,7 +73,8 @@ public:
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
 
-
+	UFUNCTION()
+	UInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
 	/* MODIFIED */
 
 private:
@@ -81,22 +83,10 @@ private:
 	UInputAction* InventoryAction;
 
 public:
-	UFUNCTION()
-	void OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-		UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
-		const FHitResult& SweepResult);
 
 protected:
-	UPROPERTY()
-	int32 MoneyAmount;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "UI")
-	TSubclassOf<UUserWidget> InventoryWidgetClass;
-
-	UPROPERTY()
-	TObjectPtr<UUserWidget> InventoryWidget;
-
-	/** Called for open|closing inventory */
-	void InventoryEvent(const FInputActionValue& Value);
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "Inventory")
+	UInventoryComponent* InventoryComponent;
 };
 

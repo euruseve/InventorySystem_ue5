@@ -15,6 +15,7 @@
 #include "Objects/Money.h"
 #include <Structs/MoneyType.h>
 #include <Kismet/GameplayStatics.h>
+#include "Components/InventoryComponent.h"
 
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -26,7 +27,6 @@ AInventoryCharacter::AInventoryCharacter()
 {
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
-	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnComponentBeginOverlap);
 
 	// Don't rotate when the controller rotates. Let that just affect the camera.
 	bUseControllerRotationPitch = false;
@@ -59,12 +59,9 @@ AInventoryCharacter::AInventoryCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+	
 
-	MoneyAmount = 0;
-
-	// Set Inventory Widget Class to null initially
-	InventoryWidgetClass = nullptr;
-	InventoryWidget = nullptr;
+	InventoryComponent = CreateDefaultSubobject<UInventoryComponent>(TEXT("InventoryComponent"));
 }
 
 void AInventoryCharacter::BeginPlay()
@@ -72,10 +69,7 @@ void AInventoryCharacter::BeginPlay()
 	// Call the base class  
 	Super::BeginPlay();
 
-	if (InventoryWidgetClass)
-	{
-		InventoryWidget = CreateWidget<UUserWidget>(GetWorld(), InventoryWidgetClass);
-	}
+	check(InventoryComponent);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -106,7 +100,7 @@ void AInventoryCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &AInventoryCharacter::Look);
 
 		// Inventory
-		EnhancedInputComponent->BindAction(InventoryAction, ETriggerEvent::Started, this, &AInventoryCharacter::InventoryEvent);
+		EnhancedInputComponent->BindAction(InventoryAction, ETriggerEvent::Started, InventoryComponent, &UInventoryComponent::InventoryEvent);
 	}
 	else
 	{
@@ -150,49 +144,5 @@ void AInventoryCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
-
-void AInventoryCharacter::InventoryEvent(const FInputActionValue& Value)
-{
-	if (InventoryWidget)
-	{
-		auto PlayerController = Cast<APlayerController>(GetController());
-		if (!PlayerController) 
-			return;
-
-		InventoryWidget->AddToViewport();
-		PlayerController->SetShowMouseCursor(true);
-
-		const TSharedPtr<SWidget> SInventoryWidget = InventoryWidget->TakeWidget();
-		PlayerController->SetInputMode(FInputModeUIOnly().SetWidgetToFocus(SInventoryWidget));
-	}
-}
-
 //
-void AInventoryCharacter::OnComponentBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
-	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
-	const FHitResult& SweepResult) 
-{
-	if (OtherActor && OtherActor->IsA(AMoney::StaticClass()))
-	{
-		auto Money = Cast<AMoney>(OtherActor);
-
-		if (Money)
-		{
-			auto MoneyAmountRaw = Money->GetDataTable();
-			if (MoneyAmountRaw.DataTable)
-			{
-				auto MoneyRow = MoneyAmountRaw.DataTable->FindRow<FMoneyType>(MoneyAmountRaw.RowName, "");
-
-				if (MoneyRow)
-				{
-					MoneyAmount += MoneyRow->Amount;
-					// UE_LOG(LogTemplateCharacter, Warning, TEXT("Amount: %d"), MoneyAmount);
-				}
-				
-			}
-		}
-
-		OtherActor->Destroy();
-	}
-}
 
